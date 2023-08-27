@@ -270,19 +270,3 @@ impl PserDB {
         self.psers.inner_mut().get_mut(uuid)
     }
 }
-
-#[cfg(test)]
-mod t {
-    use super::PserDB;
-
-    #[test]
-    fn tt() {
-        let s = PserDB::new("hello").unwrap();
-        let v1 = s.header.verify_header("hello");
-        let v2 = s.header.verify_header("hello2");
-
-        println!("{:?}", s.header);
-        println!("{:?}", v1);
-        println!("{:?}", v2);
-    }
-}
