@@ -1,0 +1,37 @@
+[workspace]
+members = ["crypt"]
+
+[package]
+name = "pser"
+version = "0.1.0"
+edition = "2021"
+description = "gen and save passwd like keepass/1password"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+chrono_ext = { path = "../../bian/chrono_ext" }
+crypt = { path = "./crypt" }
+clap = { version = "4", features = ["derive"] }
+bincode = "1"
+serde = { version = "1.0" }
+serde_json = { version = "1.0" }
+sha2 = "0.10"
+thiserror = "1.0"
+anyhow = "1.0"
+redb = { version = "1.0", features = ["logging"] }
+uuid = { version = "1.4", features = [
+    "v4",
+    "fast-rng",
+    "macro-diagnostics",
+    "serde",
+] }
+rand = { version = "0.8" }
+lazy_static = { version = "1.4" }
+rpassword = "7"
+dirs = "5"
+regex = { version = "1.9" }
+csv = { version = "1" }
+
+[profile.release]
+strip = true
