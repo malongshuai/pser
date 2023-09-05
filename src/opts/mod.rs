@@ -63,7 +63,7 @@ pub struct RmCmd {
     pub uuid: String,
 }
 
-/// 删除所有密码库文件
+/// 删除密码库文件
 #[derive(Debug, Parser)]
 pub struct DropCmd {
     /// 删除主密码库文件，同时指定-s选项将同时删除主从密码库文件
