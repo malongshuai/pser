@@ -3,7 +3,8 @@ use db_file::PserDB;
 use gen_rand::gen_passwd;
 use lazy_static::lazy_static;
 use opts::{
-    ExportCmd, GenPasswdCmd, ImportCmd, ImportSrcType, InsertCmd, QueryCmd, ResetCmd, RmCmd,
+    DropCmd, ExportCmd, GenPasswdCmd, ImportCmd, ImportSrcType, InsertCmd, QueryCmd, ResetCmd,
+    RmCmd,
 };
 use pser::Pser;
 use std::{collections::HashMap, io::Read, path::PathBuf};
@@ -46,6 +47,7 @@ fn main() {
         opts::Cmds::Query(opt) => query(&opt),
         opts::Cmds::Insert(opt) => add_passwd(&opt),
         opts::Cmds::Rm(opt) => remove_passwd(&opt),
+        opts::Cmds::Drop(opt) => drop_pser_file(&opt),
         opts::Cmds::Reset(opt) => reset_main_passwd(&opt),
         opts::Cmds::Gen(opt) => {
             let passwds = gen(&opt);
@@ -110,17 +112,6 @@ fn remove_passwd(opt: &RmCmd) {
 
     let main_passwd = prompt_password("输入主密码");
 
-    // 如果是remove，则删除密码库，且只有密码验证通过时才删除密码库文件，验证失败不删除
-    if opt.uuid.eq_ignore_ascii_case("remove") {
-        let t = PserDB::new(&main_passwd).is_ok();
-        if t {
-            let _ = std::fs::remove_file(&*DB_FILE_HOME);
-            let _ = std::fs::remove_file(&*DB_FILE_CUR);
-        }
-
-        return;
-    }
-
     let mut db = PserDB::new(&main_passwd).unwrap();
     // 如果是all，则清空所有密码信息
     if opt.uuid.eq_ignore_ascii_case("all") {
@@ -128,13 +119,24 @@ fn remove_passwd(opt: &RmCmd) {
         return;
     }
 
-    for uuid_prefix in opt.uuid.split(",") {
+    for uuid_prefix in opt.uuid.split(',') {
         let uuids = db.uuid_by_prefix(uuid_prefix);
         match uuids.len() {
             1 => db.remove(&uuids[0]).unwrap(),
             0 => println!("Uuid({})不存在", uuid_prefix),
             _ => println!("Uuid({})指定位数过少产生歧义", uuid_prefix),
         }
+    }
+}
+
+/// 不做任何密码验证，直接删除密码库文件
+fn drop_pser_file(opt: &DropCmd) {
+    if opt.main {
+        let _ = std::fs::remove_file(&*DB_FILE_HOME);
+    }
+
+    if opt.secondary {
+        let _ = std::fs::remove_file(&*DB_FILE_CUR);
     }
 }
 
@@ -217,7 +219,7 @@ fn update_pser(pser: &mut Pser, opt: &InsertCmd) {
                 pser.email.push_str(email);
             }
             None => {
-                pser.set_email(&email);
+                pser.set_email(email);
             }
         }
     }
@@ -230,13 +232,13 @@ fn update_pser(pser: &mut Pser, opt: &InsertCmd) {
                 pser.phone.push_str(phone);
             }
             None => {
-                pser.set_phone(&phone);
+                pser.set_phone(phone);
             }
         }
     }
 
     if let Some(passwd) = &opt.passwd {
-        pser.set_passwd(&passwd);
+        pser.set_passwd(passwd);
     }
 
     // 如果首字符是`+`，则追加，否则覆盖
@@ -283,22 +285,24 @@ fn import(opt: &ImportCmd) {
 
 fn import_from_json(db: &mut PserDB, json_str: &str) {
     let s: HashMap<String, Pser> =
-        serde_json::from_str(&json_str).expect(&format!("can't decode: {}", json_str));
+        serde_json::from_str(json_str).unwrap_or_else(|_| panic!("can't decode: {}", json_str));
 
     let mut success_insert = 0;
 
     for (uuid, pser) in s {
-        let uuids = db.uuid_by_prefix(&uuid);
-        match uuids.is_empty() {
-            // 如果当前库中已经存在重复的uuid，则重新生成新的uuid
-            false => {
-                println!("Uuid({})已经存在，可能和库中的密码重复，但仍将生成新的uuid并插入，如果新导入的密码确实存在重复，可稍后手动删除", uuid);
-                db.insert(pser).unwrap();
-            }
-            true => {
-                db.insert(pser).unwrap();
-            }
-        }
+        db.update(&uuid, pser).unwrap();
+
+        // let uuids = db.uuid_by_prefix(&uuid);
+        // match uuids.is_empty() {
+        //     // 如果当前库中已经存在重复的uuid，则重新生成新的uuid
+        //     false => {
+        //         println!("Uuid({})已经存在，可能和库中的密码重复，但仍将生成新的uuid并插入，如果新导入的密码确实存在重复，可稍后手动删除", uuid);
+        //         db.insert(pser).unwrap();
+        //     }
+        //     true => {
+        //         db.insert(pser).unwrap();
+        //     }
+        // }
         success_insert += 1;
     }
 
@@ -340,13 +344,13 @@ fn import_from_csv(db: &mut PserDB, csv_str: &str) {
         let comment = res.get(comment_idx);
         let username = res
             .get(username_idx)
-            .expect(&format!("missing username field at line {}", line_num));
+            .unwrap_or_else(|| panic!("missing username field at line {}", line_num));
         let url = res
             .get(url_idx)
-            .expect(&format!("missing url field at line {}", line_num));
+            .unwrap_or_else(|| panic!("missing url field at line {}", line_num));
         let passwd = res
             .get(passwd_idx)
-            .expect(&format!("missing password field at line {}", line_num));
+            .unwrap_or_else(|| panic!("missing password field at line {}", line_num));
 
         let mut pser = Pser::new();
         pser.set_username(username).set_url(url).set_passwd(passwd);
@@ -409,6 +413,6 @@ mod t {
     #[test]
     fn tt() {
         let str = "skdflajs,d";
-        println!("{:?}", str.split(",").collect::<Vec<_>>());
+        println!("{:?}", str.split(',').collect::<Vec<_>>());
     }
 }

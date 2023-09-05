@@ -188,7 +188,7 @@ impl Psers {
 fn domain_from_url(url: &str) -> Option<&str> {
     let re = Regex::new(r"^(?:.*://)?(?<domain>.*?)(?:/|$)").unwrap();
     let capt = re.captures(url).unwrap();
-    capt.name("domain").and_then(|x| Some(x.as_str()))
+    capt.name("domain").map(|x| x.as_str())
 }
 
 #[cfg(test)]
@@ -200,6 +200,6 @@ mod t {
         let re = Regex::new(r"^(?:.*://)?(?<domain>.*?)/").unwrap();
         let url = "http://id1.cloud.abc.com/a/b/c.html";
         let capt = re.captures(url).unwrap();
-        println!("{:?}", capt.name("domain").and_then(|x| Some(x.as_str())));
+        println!("{:?}", capt.name("domain").map(|x| x.as_str()));
     }
 }

@@ -13,6 +13,8 @@ use crate::{
 };
 use crypt::EncryptData;
 use redb::{Database, ReadableTable, TableDefinition};
+use sha2::{Digest, Sha512};
+use std::path::Path;
 use uuid::Uuid;
 
 /// 表名(该表的key为&str，value为bincode编码后的字节数据)
@@ -33,6 +35,9 @@ impl SyncDb {
     pub fn new() -> PserResult<Self> {
         let s = match (DB_FILE_HOME.exists(), DB_FILE_CUR.exists()) {
             (true, true) | (true, false) => {
+                // 检查主从密码库文件的sha2值，判断主从密码库的数据是否一致
+                check_db_sha2();
+
                 std::fs::copy(&*DB_FILE_HOME, &*DB_FILE_CUR)?;
                 let db_home = redb::Database::create(&*DB_FILE_HOME).map_err(redb::Error::from)?;
                 let db_cur = redb::Database::create(&*DB_FILE_CUR).map_err(redb::Error::from)?;
@@ -213,7 +218,7 @@ impl PserDB {
         self.sync_psers()
     }
 
-    /// 替换已存在的Pser并保存
+    /// 替换已存在的Pser并保存(如果uuid不存在，则新创建)
     pub fn update(&mut self, uuid: &str, pser: Pser) -> PserResult<()> {
         self.psers.inner_mut().insert(uuid.to_string(), pser);
         self.sync_psers()
@@ -268,5 +273,27 @@ impl PserDB {
     /// 根据uuid，返回Pser的可变引用
     pub fn get_pser_mut(&mut self, uuid: &str) -> Option<&mut Pser> {
         self.psers.inner_mut().get_mut(uuid)
+    }
+}
+
+fn file_sha2<T: AsRef<Path>>(file: T) -> Vec<u8> {
+    let data = std::fs::read(file.as_ref()).unwrap();
+    let mut hasher: Sha512 = Sha512::new();
+    hasher.update(data);
+    let res = hasher.finalize();
+    res.to_vec()
+}
+
+/// 检查主从密码库文件的sha2值，判断主从密码库的数据是否一致
+fn check_db_sha2() {
+    let home_sha2 = file_sha2(&*DB_FILE_HOME);
+    let cur_sha2 = file_sha2(&*DB_FILE_CUR);
+    if home_sha2 != cur_sha2 {
+        let mut str = String::new();
+        str.push_str("主、从密码库文件数据不一致.\n");
+        str.push_str("如果要采取主密码库，则通过该程序删除从密码库文件，然后再次运行.\n");
+        str.push_str("如果要采取从密码库，则通过该程序删除主密码库文件，然后再次运行");
+        eprintln!("{}", str);
+        std::process::exit(1);
     }
 }

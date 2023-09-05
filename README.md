@@ -43,11 +43,12 @@ $ pser --help
 Usage: pser <COMMAND>
 
 Commands:
-  gen     生成随机密码
+  gen     生成随机密码 [aliases: g]
   init    初始化(创建)密码库
-  query   搜索密码库中的密码信息。搜索时，只根据密码的所属url或所属desc进行搜索
-  insert  添加或修改已有密码
-  rm      删除或清空密码信息
+  query   搜索密码库中的密码信息。 [aliases: q]
+  insert  添加或修改已有密码 [aliases: i]
+  rm      删除或清空密码信息 [aliases: r]
+  drop    删除所有密码库文件 [aliases: d]
   reset   重置主密码
   import  导入密码信息
   export  导出密码信息为json格式
@@ -206,11 +207,11 @@ $ pser query
 $ pser query google
 ```
 
-### 删除密码库中的密码、清空密码库
+### 删除密码库中的密码、清空、删除密码库
 
 `pser rm`子命令用于删除密码信息。
 
-例如
+例如:
 
 ```bash
 # 删除 uuid 前缀为 d5963ef 的密码信息
@@ -218,9 +219,21 @@ $ pser rm d5963ef
 
 # 删除密码库中的所有密码(使用特殊参数值`all`)，即回到初始化状态
 $ pser rm all
+```
 
-# 删除密码库文件(使用特殊参数值`remove`)
-$ pser rm remove
+`pser drop`子命令用于删除密码库。
+
+例如:
+
+```bash
+# 删除主密码库文件
+$ pser drop -m
+
+# 删除从密码库文件
+$ pser drop -s
+
+# 删除主、从密码库文件
+$ pser drop -m -s
 ```
 
 ### 导出密码库
@@ -264,7 +277,8 @@ $ cat /tmp/pser_passwd.json
 - 由浏览器导出的csv文件
 
 ```bash
-# 导入 json 格式的密码信息文件
+# 导入 json 格式的密码信息文件，
+# 如果被导入的密码信息的uuid值和库中某密码信息的uuid值重复，则覆盖当前库中的密码信息
 $ pser import --src-type json --input /tmp/pser_passwd.json
 ```
 
