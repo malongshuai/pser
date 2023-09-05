@@ -111,9 +111,11 @@ impl Pser {
     pub fn simple_display(&self, uuid: Option<&str>) -> String {
         let mut str = String::new();
 
-        if !self.url.is_empty() {
-            let _ = write!(&mut str, "url:{}", self.url);
-        }
+        match self.url.is_empty() {
+            true => write!(&mut str, "desc:{}", self.desc).unwrap(),
+            false => write!(&mut str, "url:{}", self.url).unwrap(),
+        };
+
         if !self.username.is_empty() {
             let _ = write!(&mut str, "|账户名:{}", self.username);
         }
