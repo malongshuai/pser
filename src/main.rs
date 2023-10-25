@@ -64,9 +64,16 @@ fn main() {
 fn prompt_password(prompt_msg: &str) -> String {
     match PSER_MAIN_PASSWD.is_empty() {
         true => {
-            let p = rpassword::prompt_password(format!("{}: ", prompt_msg)).unwrap();
-            println!();
-            p
+            let password = dialoguer::Password::new()
+                .with_prompt(prompt_msg)
+                .interact()
+                .unwrap();
+
+            password
+
+            // let p = rpassword::prompt_password(format!("{}: ", prompt_msg)).unwrap();
+            // println!();
+            // p
         }
         false => PSER_MAIN_PASSWD.clone(),
     }
@@ -115,7 +122,11 @@ fn remove_passwd(opt: &RmCmd) {
     let mut db = PserDB::new(&main_passwd).unwrap();
     // 如果是all，则清空所有密码信息
     if opt.uuid.eq_ignore_ascii_case("all") {
-        db.clear().unwrap();
+        if yes_dialog() {
+            db.clear().unwrap();
+        } else {
+            println!("放弃清空密码信息");
+        }
         return;
     }
 
@@ -131,12 +142,14 @@ fn remove_passwd(opt: &RmCmd) {
 
 /// 不做任何密码验证，直接删除密码库文件
 fn drop_pser_file(opt: &DropCmd) {
-    if opt.main {
-        let _ = std::fs::remove_file(&*DB_FILE_HOME);
-    }
+    if yes_dialog() {
+        if opt.main {
+            let _ = std::fs::remove_file(&*DB_FILE_HOME);
+        }
 
-    if opt.secondary {
-        let _ = std::fs::remove_file(&*DB_FILE_CUR);
+        if opt.secondary {
+            let _ = std::fs::remove_file(&*DB_FILE_CUR);
+        }
     }
 }
 
@@ -385,6 +398,14 @@ fn export(opt: &ExportCmd) {
     }
 }
 
+fn yes_dialog() -> bool {
+    let yes = dialoguer::Confirm::new()
+        .with_prompt("Do you want to continue?")
+        .interact()
+        .unwrap();
+    yes
+}
+
 #[allow(dead_code)]
 fn add_test_psers() {
     let mut db = PserDB::new("helloworld").unwrap();
@@ -412,7 +433,11 @@ fn add_test_psers() {
 mod t {
     #[test]
     fn tt() {
-        let str = "skdflajs,d";
-        println!("{:?}", str.split(',').collect::<Vec<_>>());
+        let password = dialoguer::Password::new()
+            .with_prompt("give me password")
+            .interact()
+            .unwrap();
+
+        println!("password: {}", password);
     }
 }

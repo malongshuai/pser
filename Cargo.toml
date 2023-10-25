@@ -28,10 +28,11 @@ uuid = { version = "1.4", features = [
 ] }
 rand = { version = "0.8" }
 lazy_static = { version = "1.4" }
-rpassword = "7"
 dirs = "5"
 regex = { version = "1.9" }
 csv = { version = "1" }
+dialoguer = {version = "0.11"}
+# rpassword = "7"
 
 [profile.release]
 strip = true

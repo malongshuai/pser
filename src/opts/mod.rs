@@ -12,7 +12,7 @@ pub use gen_cmd::GenPasswdCmd;
 /// 如果没有提供，在需要主密码的地方，将交互式提示你输入密码
 #[derive(Debug, Parser)]
 pub struct Opts {
-    #[command(subcommand)]
+    #[clap(subcommand)]
     pub cmds: Cmds,
 }
 

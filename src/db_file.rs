@@ -14,7 +14,7 @@ use crate::{
 use crypt::EncryptData;
 use redb::{Database, ReadableTable, TableDefinition};
 use sha2::{Digest, Sha512};
-use std::path::Path;
+use std::{io, path::Path};
 use uuid::Uuid;
 
 /// 表名(该表的key为&str，value为bincode编码后的字节数据)
@@ -34,10 +34,16 @@ pub struct SyncDb {
 impl SyncDb {
     pub fn new() -> PserResult<Self> {
         let s = match (DB_FILE_HOME.exists(), DB_FILE_CUR.exists()) {
-            (true, true) | (true, false) => {
+            (true, true) => {
                 // 检查主从密码库文件的sha2值，判断主从密码库的数据是否一致
                 check_db_sha2();
 
+                std::fs::copy(&*DB_FILE_HOME, &*DB_FILE_CUR)?;
+                let db_home = redb::Database::create(&*DB_FILE_HOME).map_err(redb::Error::from)?;
+                let db_cur = redb::Database::create(&*DB_FILE_CUR).map_err(redb::Error::from)?;
+                Self { db_home, db_cur }
+            }
+            (true, false) => {
                 std::fs::copy(&*DB_FILE_HOME, &*DB_FILE_CUR)?;
                 let db_home = redb::Database::create(&*DB_FILE_HOME).map_err(redb::Error::from)?;
                 let db_cur = redb::Database::create(&*DB_FILE_CUR).map_err(redb::Error::from)?;
@@ -276,18 +282,18 @@ impl PserDB {
     }
 }
 
-fn file_sha2<T: AsRef<Path>>(file: T) -> Vec<u8> {
-    let data = std::fs::read(file.as_ref()).unwrap();
+fn file_sha2<T: AsRef<Path>>(file: T) -> io::Result<Vec<u8>> {
+    let data = std::fs::read(file.as_ref())?;
     let mut hasher: Sha512 = Sha512::new();
     hasher.update(data);
     let res = hasher.finalize();
-    res.to_vec()
+    Ok(res.to_vec())
 }
 
 /// 检查主从密码库文件的sha2值，判断主从密码库的数据是否一致
 fn check_db_sha2() {
-    let home_sha2 = file_sha2(&*DB_FILE_HOME);
-    let cur_sha2 = file_sha2(&*DB_FILE_CUR);
+    let home_sha2 = file_sha2(&*DB_FILE_HOME).unwrap_or_else(|e| panic!("无法读取主密码库: {}", e));
+    let cur_sha2 = file_sha2(&*DB_FILE_CUR).unwrap_or_else(|e| panic!("无法读取从密码库: {}", e));
     if home_sha2 != cur_sha2 {
         let mut str = String::new();
         str.push_str("主、从密码库文件数据不一致.\n");
