@@ -34,6 +34,8 @@ pub enum Cmds {
     Reset(ResetCmd),
     Import(ImportCmd),
     Export(ExportCmd),
+    #[clap(hide(true))]
+    Path
 }
 
 /// 搜索密码库中的密码信息。

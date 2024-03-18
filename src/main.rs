@@ -57,6 +57,12 @@ fn main() {
         }
         opts::Cmds::Import(opt) => import(&opt),
         opts::Cmds::Export(opt) => export(&opt),
+        opts::Cmds::Path => {
+            println!("the pser password file path:");
+            println!("  1.{}", DB_FILE_HOME.as_os_str().to_str().unwrap());
+            println!("  2.{}", DB_FILE_CUR.as_os_str().to_str().unwrap());
+            println!("these files maybe not exists");
+        }
     }
 }
 
