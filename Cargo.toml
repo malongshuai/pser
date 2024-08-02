@@ -19,7 +19,7 @@ serde_json = { version = "1.0" }
 sha2 = "0.10"
 thiserror = "1.0"
 anyhow = "1.0"
-redb = { version = "1.0", features = ["logging"] }
+redb = { version = "2", features = ["logging"] }
 uuid = { version = "1.4", features = [
     "v4",
     "fast-rng",

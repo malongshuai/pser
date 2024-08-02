@@ -12,7 +12,7 @@ use crate::{
     DB_FILE_CUR, DB_FILE_HOME,
 };
 use crypt::EncryptData;
-use redb::{Database, ReadableTable, TableDefinition};
+use redb::{Database, ReadableTableMetadata, TableDefinition};
 use sha2::{Digest, Sha512};
 use std::{io, path::Path};
 use uuid::Uuid;
