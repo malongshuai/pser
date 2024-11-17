@@ -17,22 +17,28 @@ bincode = "1"
 serde = { version = "1.0" }
 serde_json = { version = "1.0" }
 sha2 = "0.10"
-thiserror = "1.0"
+thiserror = "2.0"
 anyhow = "1.0"
 redb = { version = "2", features = ["logging"] }
 uuid = { version = "1.4", features = [
-    "v4",
-    "fast-rng",
-    "macro-diagnostics",
-    "serde",
+  "v4",
+  "fast-rng",
+  "macro-diagnostics",
+  "serde",
 ] }
 rand = { version = "0.8" }
 lazy_static = { version = "1.4" }
 dirs = "5"
 regex = { version = "1.9" }
 csv = { version = "1" }
-dialoguer = {version = "0.11"}
+dialoguer = { version = "0.11" }
 # rpassword = "7"
+
 
 [profile.release]
 strip = true
+
+
+[[bin]]
+name = "pser"
+path = "src/bin/cli/main.rs"
